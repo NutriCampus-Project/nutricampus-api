@@ -1,6 +1,8 @@
 <?php
 
 class ProveedorVisionIA {
+    private const MAX_TAMANIO_KB = 5120;
+
     private array $tablaNutricional = [
         'trucha_frita' => ['kcal' => 1.90, 'proteinas' => 0.21, 'carbohidratos' => 0.00],
         'arroz_blanco' => ['kcal' => 1.30, 'proteinas' => 0.027, 'carbohidratos' => 0.28],
@@ -8,34 +10,47 @@ class ProveedorVisionIA {
         'ensalada'     => ['kcal' => 0.25, 'proteinas' => 0.012, 'carbohidratos' => 0.04],
     ];
 
-    // 1. Recepcion de datos
-    public function analizarImagenPlato(string $archivo, int $tamanoKb, array $porcionesGramos): array {
-        // 2. Validaciones de formato y tamano maximo (5 MB = 5120 KB)
+    public function analizarImagenPlato(string $archivo, $tamanoKb, array $porcionesGramos): array {
+        $archivo = trim($archivo);
+        if ($archivo === '') {
+            return ['estado' => 'ERROR', 'mensaje' => 'Debe indicar el nombre o la ruta de la imagen.'];
+        }
+
         $extension = strtolower(pathinfo($archivo, PATHINFO_EXTENSION));
-        if (!in_array($extension, ['jpg', 'jpeg', 'png'])) {
+        if (!in_array($extension, ['jpg', 'jpeg', 'png'], true)) {
             return ['estado' => 'ERROR', 'mensaje' => 'Formato no valido. Solo se permite JPG o PNG.'];
         }
-        if ($tamanoKb <= 0 || $tamanoKb > 5120) {
+
+        if (!is_numeric($tamanoKb) || (float) $tamanoKb <= 0 || (float) $tamanoKb > self::MAX_TAMANIO_KB) {
             return ['estado' => 'ERROR', 'mensaje' => 'La imagen supera el tamano maximo de 5 MB (5120 KB).'];
         }
-        if (empty($porcionesGramos)) {
+
+        if ($porcionesGramos === []) {
             return ['estado' => 'ERROR', 'mensaje' => 'No se detectaron porciones de alimentos en la imagen.'];
         }
 
-        // 3. Procesamiento de la funcionalidad
-        $kcal = 0;
-        $proteinas = 0;
-        $carbohidratos = 0;
+        $kcal = 0.0;
+        $proteinas = 0.0;
+        $carbohidratos = 0.0;
 
         foreach ($porcionesGramos as $alimento => $gramos) {
-            if (isset($this->tablaNutricional[$alimento])) {
-                $kcal += $gramos * $this->tablaNutricional[$alimento]['kcal'];
-                $proteinas += $gramos * $this->tablaNutricional[$alimento]['proteinas'];
-                $carbohidratos += $gramos * $this->tablaNutricional[$alimento]['carbohidratos'];
+            $alimentoNormalizado = strtolower(trim((string) $alimento));
+            if (!is_numeric($gramos) || (float) $gramos <= 0 || !isset($this->tablaNutricional[$alimentoNormalizado])) {
+                continue;
             }
+
+            $gramosNumericos = (float) $gramos;
+            $datosNutricionales = $this->tablaNutricional[$alimentoNormalizado];
+
+            $kcal += $gramosNumericos * $datosNutricionales['kcal'];
+            $proteinas += $gramosNumericos * $datosNutricionales['proteinas'];
+            $carbohidratos += $gramosNumericos * $datosNutricionales['carbohidratos'];
         }
 
-        // 4. Presentacion del resultado
+        if ($kcal === 0.0 && $proteinas === 0.0 && $carbohidratos === 0.0) {
+            return ['estado' => 'ERROR', 'mensaje' => 'No se encontraron alimentos validos para estimar el plato.'];
+        }
+
         return [
             'estado'          => 'OK',
             'archivo'         => $archivo,
@@ -46,15 +61,17 @@ class ProveedorVisionIA {
     }
 }
 
-$ia = new ProveedorVisionIA();
-echo "=== CASO VALIDO ===\n";
-print_r($ia->analizarImagenPlato('almuerzo.jpg', 2400, [
-    'trucha_frita' => 150,
-    'arroz_blanco' => 100,
-    'papa_hervida' => 130
-]));
+if (PHP_SAPI === 'cli' && realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    $ia = new ProveedorVisionIA();
+    echo "=== CASO VALIDO ===\n";
+    print_r($ia->analizarImagenPlato('almuerzo.jpg', 2400, [
+        'trucha_frita' => 150,
+        'arroz_blanco' => 100,
+        'papa_hervida' => 130
+    ]));
 
-echo "\n=== CASO INVALIDO ===\n";
-print_r($ia->analizarImagenPlato('almuerzo_pesado.jpg', 6500, [
-    'trucha_frita' => 150
-]));
+    echo "\n=== CASO INVALIDO ===\n";
+    print_r($ia->analizarImagenPlato('almuerzo_pesado.jpg', 6500, [
+        'trucha_frita' => 150
+    ]));
+}
