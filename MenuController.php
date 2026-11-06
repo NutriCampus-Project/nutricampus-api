@@ -49,3 +49,4 @@ print_r($controlador->publicarMenuDiario('Encargado', '2026-10-30', 'Almuerzo', 
 
 echo "\n=== CASO INVALIDO ===\n";
 print_r($controlador->publicarMenuDiario('Estudiante', '2026-10-30', 'Almuerzo', 'Trucha frita', 'Trucha, papa, ensalada'));
+
