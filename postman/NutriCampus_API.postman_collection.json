@@ -1,0 +1,110 @@
+{
+  "info": {
+    "_postman_id": "a7f3c912-8b4d-4e22-9f4e-7b231920e101",
+    "name": "NutriCampus API - Modulo Vision IA (Jordan)",
+    "description": "Coleccion de pruebas de integracion para el modulo de Vision Artificial IA y Calculo Nutricional (RF08, RF09, RNF02, RNF08).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. POST /api/escaneos - Caso exitoso (RF08 y RF09)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"archivo\": \"almuerzo_unap.jpg\",\n  \"tamano_kb\": 2400,\n  \"porciones\": {\n    \"trucha_frita\": 150,\n    \"arroz_blanco\": 100,\n    \"papa_hervida\": 130\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/escaneos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "escaneos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. POST /api/escaneos - Rechazo por tamano > 5 MB (RNF02)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"archivo\": \"almuerzo_pesado.jpg\",\n  \"tamano_kb\": 6500,\n  \"porciones\": {\n    \"trucha_frita\": 150,\n    \"arroz_blanco\": 100\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/escaneos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "escaneos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. POST /api/escaneos - Rechazo por formato no permitido (RF08)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"archivo\": \"documento.pdf\",\n  \"tamano_kb\": 1200,\n  \"porciones\": {\n    \"trucha_frita\": 150\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/escaneos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "escaneos"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

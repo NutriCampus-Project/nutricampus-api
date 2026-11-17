@@ -1,34 +1,50 @@
 <?php
-require_once __DIR__ . '/ProveedorVisionIA.php';
 
-class EscanerController
-{
-    private ProveedorVisionIA $servicioIA;
+require __DIR__ . '/vendor/autoload.php';
 
-    public function __construct(ProveedorVisionIA $servicioIA)
-    {
-        $this->servicioIA = $servicioIA;
-    }
+use App\Http\Controllers\EscanerController;
+use Illuminate\Contracts\Console\Kernel;
 
-    public function escanearPlato(string $archivo, int $tamanoKb, array $porciones): array
-    {
-        return $this->servicioIA->analizarImagenPlato($archivo, $tamanoKb, $porciones);
-    }
-}
+$app = require __DIR__ . '/bootstrap/app.php';
+$kernel = $app->make(Kernel::class);
+$kernel->bootstrap();
 
-$controlador = new EscanerController(new ProveedorVisionIA());
+/** @var EscanerController $controlador */
+$controlador = $app->make(EscanerController::class);
 
-echo "=== PRUEBA 1: DATOS CORRECTOS (almuerzo.jpg - 2400 KB) ===\n";
-$resultado1 = $controlador->escanearPlato('almuerzo.jpg', 2400, [
-    'trucha_frita' => 150,
-    'arroz_blanco' => 100,
-    'papa_hervida' => 130
-]);
-print_r($resultado1);
+echo "=================================================================================\n";
+echo "NUTRICAMPUS API - INTEGRACION DE COMPONENTES (Escaner -> ServicioVisionIA -> IA)\n";
+echo "=================================================================================\n\n";
 
-echo "\n=== PRUEBA 2: DATOS QUE DEBEN SER RECHAZADOS (almuerzo_pesado.jpg - 6500 KB) ===\n";
-$resultado2 = $controlador->escanearPlato('almuerzo_pesado.jpg', 6500, [
-    'trucha_frita' => 150,
-    'arroz_blanco' => 100
-]);
-print_r($resultado2);
+echo "=== PRUEBA 1: FUNCIONAMIENTO ESPERADO - RF08 y RF09 (almuerzo_unap.jpg - 2400 KB) ===\n";
+$resultado1 = $controlador->escanearPlato(
+    archivo: 'almuerzo_unap.jpg',
+    tamanoKb: 2400,
+    porciones: [
+        'trucha_frita' => 150,
+        'arroz_blanco' => 100,
+        'papa_hervida' => 130,
+    ]
+);
+echo json_encode($resultado1, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n\n";
+
+echo "=== PRUEBA 2: RECHAZO POR TAMANO > 5 MB - RNF02 (almuerzo_pesado.jpg - 6500 KB) ===\n";
+$resultado2 = $controlador->escanearPlato(
+    archivo: 'almuerzo_pesado.jpg',
+    tamanoKb: 6500,
+    porciones: [
+        'trucha_frita' => 150,
+        'arroz_blanco' => 100,
+    ]
+);
+echo json_encode($resultado2, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n\n";
+
+echo "=== PRUEBA 3: RECHAZO POR FORMATO NO PERMITIDO - RF08 (documento.pdf - 1200 KB) ===\n";
+$resultado3 = $controlador->escanearPlato(
+    archivo: 'documento.pdf',
+    tamanoKb: 1200,
+    porciones: [
+        'trucha_frita' => 150,
+    ]
+);
+echo json_encode($resultado3, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
